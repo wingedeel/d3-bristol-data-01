@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>04 Highlight alternate bars</title>
+	<!-- 
+	https://opendata.bristol.gov.uk/Community/2011-Census-religion/grct-jywh
+	-->
+	<script src="http://d3js.org/d3.v3.min.js"></script>
+	<style type="text/css">
+
+			body {
+				background-color: gray;
+			}
+
+			svg {
+				background-color: papayawhip;
+			}
+
+			svg rect {
+				fill: DarkOrange;
+			}
+			svg rect.highlight {
+				fill: PaleTurquoise;
+			}
+
+	</style>
+</head>
+<body>
+	<script type="text/javascript">
+
+		//Width, height, padding
+		var w = 800;
+		var h = 800;
+		var padding = 50;
+
+		// Dataset
+		d3.csv("2011_Census-religion.csv", function(data) {
+			console.log(data);
+			var dataset = data;
+		
+		// Scales
+		var xScale = d3.scale.ordinal()
+						// range returns an array from [0,1..35]
+						.domain(d3.range(dataset.length))
+						// rangeRoundBands is same as rangeBands except guarantees integers
+						// arg1: interval -[50, 750]
+						// arg2: padding between ranges. Between 0 and 1. Corresponds to 
+						// the amount of space in range interval to allocate to padding
+						.rangeRoundBands([ padding, w - padding ], 0.05);
+
+		// Get the max christian rate
+		var yMaxData = d3.max(dataset, function(d) { return d['christian rate'];});
+		//Note y scale inverts values, so larger inputs return smaller
+		//outputs.  That's because we want the y value for the "top" 
+		//of each bar.  You could flip the two range values to take
+		//the opposite approach.
+		var yScale = d3.scale.linear()
+						.domain([ 0, yMaxData ])
+						.rangeRound([ h - padding, padding ]);
+
+		//Configure y axis generator
+		var yAxis = d3.svg.axis()
+						.scale(yScale)
+						.orient("left")
+						//ticks method will split your axis in n convenient values
+						.ticks(10);
+		
+		//Create SVG element
+		var svg = d3.select("body")
+					.append("svg")
+					.attr("width", w)
+					.attr("height", h);	
+
+		//Create bars
+		var rects = svg.selectAll("rect")
+		   .data(dataset)
+		   .enter()
+		   .append("rect")
+		   .attr("x", function(d, i) {
+		   		//x scale is ordinal, so using the index value for each element
+		   		//here simply moves subsequent bars farther to the right
+		   		return xScale(i);
+		   })
+		   .attr("y", function(d) {
+		   		//y scale is linear, so data value sets the starting point
+		   		//or "top" of the bar
+		   		return yScale(d['christian rate']);
+		   })
+		   .attr("width", xScale.rangeBand())  //All bars have the same width
+		   .attr("height", function(d) {
+		   		//We do some math to get the height or bottom edge of each bar,
+		   		//by subtracting the scaled value (the "top"), from the height
+		   		//of the entire image, minus padding
+		   		return h - padding - yScale(d['christian rate']);
+		   })
+		   .attr("fill", "SteelBlue");
+/*
+		//Instead of using classed() when we first create the bars,
+		//we can reselect the bars later (e.g. d3.selectAll("rect")…)
+		//or just use the reference we already stored in 'rects':
+		rects.classed("highlight", function(d) {
+		   		if (d > 20) {
+		   			return true;
+		   		}
+		   		return false;
+			});
+*/
+		//We can use filter() to accomplish the same thing, but by
+		//filtering a selection (excluding elements) rather than
+		//applying conditional logic to every element.
+		//
+		//This has the same outcome as the code above, but each
+		//approach is useful in different situations.
+		//
+		//Don't believe me? Try commenting out each of these sections
+		//and experimenting.
+		rects.filter(function(d, i) {
+				if (i > 20) {
+		   			return true;  //Element will be included in selection
+		   		}
+		   		return false;	  //Element will be excluded from selection
+			})
+			.attr("class", "highlight");
+
+
+		//Add tooltip to each rect
+		rects.append("title")
+			.text(function(d) {
+				return d['Names'];
+			});
+
+		//Create y axis
+		svg.append("g")
+			.attr("class", "axis")
+			.attr("transform", "translate(" + padding + ",0)")
+			.call(yAxis);
+		}	)
+
+		</script>
+</body>
+</html>
