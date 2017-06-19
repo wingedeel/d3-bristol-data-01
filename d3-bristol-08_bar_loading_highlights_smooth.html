@@ -24,6 +24,18 @@
 				fill: PaleTurquoise;
 			}
 
+			.axis path,
+			.axis line {
+				fill: none;
+				stroke: black;
+				shape-rendering: crispEdges;
+			}
+			
+			.axis text {
+				font-family: sans-serif;
+				font-size: 11px;
+			}
+
 	</style>
 </head>
 <body>
@@ -38,7 +50,7 @@
 		d3.csv("2011_Census-religion.csv", function(data) {
 			console.log(data);
 			var dataset = data;
-			var dataFocus = 'christian rate';
+			var dataFocus = 'christian rate'; // Prop we are concerned with
 		
 		// Scales
 		var xScale = d3.scale.ordinal()
@@ -46,15 +58,17 @@
 						.rangeRoundBands([ padding, w - padding ], 0.05);
 
 		var yMaxData = d3.max(dataset, function(d) { return d[dataFocus];});
-		
+		// yScale is inverted.  Larger data values output smaller y pixel values.
 		var yScale = d3.scale.linear()
 						.domain([ 0, yMaxData ])
 						.rangeRound([ h - padding, padding ]);
-		// yAxis
+
+		// yAxis.  An axis-generator function
 		var yAxis = d3.svg.axis()
 						.scale(yScale)
 						.orient("left")
 						.ticks(10);
+		
 		
 		//Create SVG element
 		var svg = d3.select("body")
@@ -111,6 +125,9 @@
 
 
 		// Render y axis
+		// d3.svg.axis is an Axis-Generator function
+		// The axis generation function will create the specified axis within the svg.g group svg. It will create the line with the tick marks and the pretty labels, within the container ‘g’ element.
+
 		svg.append("g")
 			.attr("class", "axis")
 			.attr("transform", "translate(" + padding + ",0)")

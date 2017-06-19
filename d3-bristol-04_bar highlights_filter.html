@@ -6,7 +6,7 @@
 	<!-- 
 	https://opendata.bristol.gov.uk/Community/2011-Census-religion/grct-jywh
 	-->
-	<script src="http://d3js.org/d3.v3.min.js"></script>
+	<script src="js/d3.js"></script>
 	<style type="text/css">
 
 			body {
@@ -83,10 +83,10 @@
 		   		return xScale(i);
 		   })
 		   .attr("y", function(d) {
-		   		//y scale is linear, so data value sets the starting point
-		   		//or "top" of the bar
-		   		return yScale(d['christian rate']);
-		   })
+					   		//Starting y value for rect is at the 
+					   		//bottom of the frame (so it can grow "up")
+					   		return h - padding;
+			})
 		   .attr("width", xScale.rangeBand())  //All bars have the same width
 		   .attr("height", function(d) {
 		   		//We do some math to get the height or bottom edge of each bar,
@@ -130,7 +130,7 @@
 				return d['Names'];
 			});
 
-		//Create y axis
+		//Render y axis
 		svg.append("g")
 			.attr("class", "axis")
 			.attr("transform", "translate(" + padding + ",0)")

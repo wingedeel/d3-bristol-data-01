@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>2011 Census - Bristol - Christian count</title>
+	<title>05 Loading bars</title>
 	<!-- 
 	https://opendata.bristol.gov.uk/Community/2011-Census-religion/grct-jywh
 	-->
-	<script src="http://d3js.org/d3.v3.min.js"></script>
+	<script src="js/d3.js"></script>
 	<style type="text/css">
 
 			body {
@@ -15,6 +15,13 @@
 
 			svg {
 				background-color: papayawhip;
+			}
+
+			svg rect {
+				fill: DarkOrange;
+			}
+			svg rect.highlight {
+				fill: PaleTurquoise;
 			}
 
 	</style>
@@ -31,31 +38,19 @@
 		d3.csv("2011_Census-religion.csv", function(data) {
 			console.log(data);
 			var dataset = data;
-			// Get the 'christian count' value from each and put in array
-			//var dataset = data.map(function(item){
-			//	return item['christian rate'];
-			//});
-			//console.log('dataset', dataset);
-			//console.log('max value: ' + d3.max(dataset))
-		//Configure x and y scale functions
-		//Note each scale accounts for padding
+			var dataFocus = 'christian rate';
+		
+		// Scales
 		var xScale = d3.scale.ordinal()
 						// range returns an array from [0,1..35]
 						.domain(d3.range(dataset.length))
-						// rangeRoundBands is same as rangeBands except guarantees integers
 						// arg1: interval -[50, 750]
 						// arg2: padding between ranges. Between 0 and 1. Corresponds to 
-						// the amount of space in range interval to allocate to padding
 						.rangeRoundBands([ padding, w - padding ], 0.05);
 
 		// Get the max christian rate
-		var yMaxData = d3.max(dataset, function(d) { return d['christian rate'];});
-
-		//Note y scale inverts values, so larger inputs return smaller
-		//outputs.  That's because we want the y value for the "top" 
-		//of each bar.  You could flip the two range values to take
-		//the opposite approach.
-		console.log('yMaxData: ' + yMaxData)
+		var yMaxData = d3.max(dataset, function(d) { return d[dataFocus];});
+		
 		var yScale = d3.scale.linear()
 						.domain([ 0, yMaxData ])
 						.rangeRound([ h - padding, padding ]);
@@ -74,6 +69,7 @@
 					.attr("height", h);	
 
 		//Create bars
+		//…and set initial (default) values
 		var rects = svg.selectAll("rect")
 		   .data(dataset)
 		   .enter()
@@ -84,18 +80,24 @@
 		   		return xScale(i);
 		   })
 		   .attr("y", function(d) {
-		   		//y scale is linear, so data value sets the starting point
-		   		//or "top" of the bar
-		   		return yScale(d['christian rate']);
+		   		//Starting y value for rect is at the 
+				//bottom of the frame (so it can grow "up")
+				 return h - padding;
 		   })
-		   .attr("width", xScale.rangeBand())  //All bars have the same width
-		   .attr("height", function(d) {
-		   		//We do some math to get the height or bottom edge of each bar,
-		   		//by subtracting the scaled value (the "top"), from the height
-		   		//of the entire image, minus padding
-		   		return h - padding - yScale(d['christian rate']);
-		   })
+		   .attr("width", xScale.rangeBand())
+		   .attr("height", 0)  //Starting height for all rects is zero
 		   .attr("fill", "SteelBlue");
+
+
+		// Highlight some bars
+		rects.filter(function(d, i) {
+				if (i > 20) {
+		   			return true;  //Element will be included in selection
+		   		}
+		   		return false;	  //Element will be excluded from selection
+			})
+			.attr("class", "highlight");
+
 
 		//Add tooltip to each rect
 		rects.append("title")
@@ -103,7 +105,22 @@
 				return d['Names'];
 			});
 
-		//Create y axis
+
+		//We re-select the rects, intiate a transition,
+		//and move their y and height values into place.
+		rects.transition()
+			// .delay(function(d, i) {  //Uncomment these lines for fun!
+			// 	return i * 100;  //Set a per-element delay
+			// })
+			.duration(1500)
+			.attr("y", function(d) {
+				return yScale(d[dataFocus]);  //Normal y value
+			})
+			.attr("height", function(d) {
+				return h - padding - yScale(d[dataFocus]);  //Normal height value
+			});
+
+		// Render y axis
 		svg.append("g")
 			.attr("class", "axis")
 			.attr("transform", "translate(" + padding + ",0)")
