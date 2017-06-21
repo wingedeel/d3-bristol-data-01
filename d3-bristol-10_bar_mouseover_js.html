@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>d3-bristol-10_bar_mouseover_js</title>
+	<!-- 
+	https://opendata.bristol.gov.uk/Community/2011-Census-religion/grct-jywh
+	-->
+	<script src="js/d3.js"></script>
+	<style type="text/css">
+
+			body {
+				background-color: gray;
+			}
+
+			svg {
+				background-color: papayawhip;
+			}
+
+			svg rect.highlight {
+				fill: PaleTurquoise;
+			}
+
+			.axis path,
+			.axis line {
+				fill: none;
+				stroke: black;
+				shape-rendering: crispEdges;
+			}
+			
+			.axis text {
+				font-family: sans-serif;
+				font-size: 11px;
+			}
+
+	</style>
+</head>
+<body>
+	<script type="text/javascript">
+
+		//Width, height, padding
+		var w = 800;
+		var h = 800;
+		var padding = 50;
+
+		// Dataset
+		d3.csv("2011_Census-religion.csv", function(data) {
+			console.log(data);
+			var dataset = data;
+			var dataFocus = 'christian rate'; // Prop we are concerned with
+		
+		// Scales
+		var xScale = d3.scale.ordinal()
+						.domain(d3.range(dataset.length))
+						.rangeRoundBands([ padding, w - padding ], 0.05);
+
+		var yMaxData = d3.max(dataset, function(d) { return d[dataFocus];});
+		// yScale is inverted.  Larger data values output smaller y pixel values.
+		var yScale = d3.scale.linear()
+						.domain([ 0, yMaxData ])
+						.rangeRound([ h - padding, padding ]);
+
+		// yAxis.  An axis-generator function
+		var yAxis = d3.svg.axis()
+						.scale(yScale)
+						.orient("left")
+						.ticks(10);
+		
+		
+		//Create SVG element
+		var svg = d3.select("body")
+					.append("svg")
+					.attr("width", w)
+					.attr("height", h);	
+
+		//Create bars
+		var rects = svg.selectAll("rect")
+		   .data(dataset)
+		   .enter()
+		   .append("rect")
+		   .attr("x", function(d, i) {
+		   		return xScale(i);
+		   })
+		   .attr("y", function(d) {
+				 return h - padding; // Starting y position to be at 0 on y axis
+		   })
+		   .attr("width", xScale.rangeBand())
+		   .attr("height", 0)  // Starting height for all rects is zero
+		   /* Control fills in JS */
+		   .attr("fill", "SteelBlue")  //Setting initial fill
+					   .on("mouseover", function() {
+					   		//Update fill on mouseover
+					   		d3.select(this)
+					   			.attr("fill", "Maroon")
+					   			.classed("highlight", false);
+					   })
+					   .on("mouseout", function(d,i) {
+					   		//Update fill on mouseout
+					   		
+					   		d3.select(this)
+					   			.attr("fill", "SteelBlue" )
+					   			.classed("highlight", function() {
+									if (i > 20) {
+										return true;
+									}
+									return false;
+				  				});
+					   });
+
+
+		//Transition bar rects into place
+		rects.transition()
+			.delay(function(d, i) {
+				return i * 100;
+			})
+			.duration(1500)
+			.attr("y", function(d) {
+				return yScale(d[dataFocus]);
+			})
+			.attr("height", function(d) {
+				return h - padding - yScale(d[dataFocus]);
+			})
+			.each("end", function(d, i) {
+				//each("end"…) executes on each element, as soon as
+				//the transition is complete.  So here, we wait until
+				//the transition is done, then apply the highlighting logic.
+				d3.select(this)
+				  .classed("highlight", function(d) {
+						if (i > 20) {
+							return true;
+						}
+						return false;
+				  });
+		});
+
+		//Add tooltip to each rect
+		rects.append("title")
+			.text(function(d) {
+				return d['Names'];
+			});
+
+
+		// Render y axis
+		// d3.svg.axis is an Axis-Generator function
+		// The axis generation function will create the specified axis within the svg.g group svg. It will create the line with the tick marks and the pretty labels, within the container ‘g’ element.
+
+		svg.append("g")
+			.attr("class", "axis")
+			.attr("transform", "translate(" + padding + ",0)")
+			.attr("opacity", 0)		//Set initial opacity of this group to zero
+			.call(yAxis)
+			.transition()			//Initialize a new transition
+			.delay(1500)			//Set a 2-second delay
+			.duration(1500)			//Set a duration of 1.5 seconds
+			.attr("opacity", 1.0);	//Dial opacity up to 1!
+
+		}	)
+
+		</script>
+</body>
+</html>
