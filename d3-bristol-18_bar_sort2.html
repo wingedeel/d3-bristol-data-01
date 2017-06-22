@@ -13,6 +13,16 @@
 				background-color: gray;
 			}
 
+			/* New rules for styling buttons */
+			#buttonContainer {
+				margin-bottom: 10px;
+			}
+
+			button {
+				padding: 15px;
+			}
+
+
 			svg {
 				background-color: papayawhip;
 			}
@@ -73,6 +83,12 @@
 </head>
 <body>
 
+	<!-- New buttons to trigger sorting! -->
+	<div id="buttonContainer">
+		<button id="sortAscending">Sort Ascending</button>
+		<button id="sortDescending">Sort Descending</button>
+	</div>
+
 	<!-- New HTML div functions as our tooltip -->
 	<div id="tooltip">
 	</div>
@@ -81,7 +97,7 @@
 
 		//Width, height, padding
 		var w = 800;
-		var h = 800;
+		var h = 600;
 		var padding = 50;
 
 		// Dataset
@@ -208,6 +224,43 @@
 			.delay(1500)			//Set a 2-second delay
 			.duration(1500)			//Set a duration of 1.5 seconds
 			.attr("opacity", 1.0);	//Dial opacity up to 1!
+
+
+		//Sorting logic
+		d3.select("#sortAscending")
+			.on("click", function() {
+
+				groups.sort(function(a, b) {
+  						return d3.ascending(a[dataFocus], b[dataFocus]);
+					})
+					.transition()
+					.delay(function(d, i) {
+						return i * 50;
+					})
+					.duration(1000)
+					.attr("transform", function(d, i) {
+				  		return "translate(" + xScale(i) + ",0)";
+					});
+
+			});
+
+		//This is EXACTLY the same as above, except for:
+		d3.select("#sortDescending")  //DEscending
+			.on("click", function() {
+
+				groups.sort(function(a, b) {
+  						return d3.descending(a[dataFocus], b[dataFocus]);  //DEscending
+					})
+					.transition()
+					.delay(function(d, i) {
+						return i * 50;
+					})
+					.duration(1000)
+					.attr("transform", function(d, i) {
+				  		return "translate(" + xScale(i) + ",0)";
+					});
+
+			});
 
 
 		}	)
